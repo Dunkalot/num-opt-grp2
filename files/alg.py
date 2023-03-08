@@ -198,3 +198,10 @@ def steepest_lin_eq(x, df, eps, A, c1, rho):
 
 def get_point(A,b,x):
     return x-np.linalg.pinv(A)@(A@x + b)
+
+def generate_A(m,n):
+    A = np.random.rand(m,n)
+    while np.linalg.matrix_rank(A) != m:
+        A = np.random.rand(m,n)
+    return A
+
