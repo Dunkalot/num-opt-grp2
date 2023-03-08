@@ -149,33 +149,35 @@ def BFGS(x, f, df, eps, c1,c2):
         Hk = Hk + (fst_top/(bot**2))*np.outer(sk,sk) - snd_top/bot
     return np.array(dfs), np.array(iters)
 
-def newton_lin_eq(x, df, Hf, eps, A, c1, rho):
+def newton_lin_eq(x, f, df, Hf, eps, A, c1, rho):
     xk = x
     Bk = 0
     pk = 0
     ak = 0 
     xks = [x]
     dfs = [df(x)]
-     
+    test = []
     while True:
         eig_vals, eig_vecs = np.linalg.eig(Hf(xk))
         eig_vecs = eig_vecs.T
         if np.all(eig_vals > 0):
             Bk = Hf(xk)
         else:
-            Bk = np.sum(np.dot(np.abs(eig_vals),np.dot(eig_vecs, np.atleast2D(eig_vecs).T)))
-        M = np.array([Bk, A.T], [A,np.zeros((A.shape[0],A.shape[0]))])
-        v = np.array([-df(xk), np.zeros(A.shape[0])])
+            Bk = np.sum(np.dot(np.abs(eig_vals),np.dot(eig_vecs, np.atleast_2d(eig_vecs).T)))
+        M = np.block([[Bk, A.T], [A,np.zeros((A.shape[0],A.shape[0]))]])
+        v = np.block([-df(xk), np.zeros(A.shape[0])])
         solved = np.linalg.solve(M,v)
-        pk = solved[0]
-        l_star = solved[1]
-        ak = backtrack(xk,pk,1.0,c1,rho)
+        pk = solved[0:A.shape[1]]
+        l_star = solved[A.shape[1]:]
+        print(l_star)
+        ak = backtrack(xk,pk,1.0,c1,rho, f, df)
         xk = xk + ak*pk
         xks.append(xk)
         dfs.append(df(xk))
-        if np.min(np.abs(np.linalg.norm(df(xk)) - A.T*l_star)) < eps:
+        test.append(np.power((df(xk) + A.T @l_star),2))
+        if np.power(np.linalg.norm(df(xk) + A.T @l_star),2) < eps:
             break
-    return xks, dfs
+    return xks, test
 
 def steepest_lin_eq(x, df, eps, A, c1, rho):
     Bk = 1.0
