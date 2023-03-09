@@ -184,6 +184,7 @@ def steepest_lin_eq(x,f, df, eps, A, c1, rho):
     xk = x
     xks = [x]
     dfs = [df(x)]
+    test = []
     while  np.linalg.norm(M.dot(df(xk))) > eps:  # Change when we agreed upon stopping criteria
         pk = -M.dot(df(xk))
         ak = backtrack(xk, pk, Bk, c1, rho, f,df)
@@ -191,7 +192,8 @@ def steepest_lin_eq(x,f, df, eps, A, c1, rho):
         Bk = ak/rho
         xks.append(xk)
         dfs.append(df(xk))
-    return xks, dfs
+        test.append(M.dot(df(xk)))
+    return xks, test
 
 def get_point(A,b,x):
     return x-np.linalg.pinv(A)@(A@x + b)
