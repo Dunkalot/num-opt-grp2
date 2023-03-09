@@ -1,13 +1,22 @@
 import numpy as np
 import math
 
-def backtrack(x, p, alpha, c, rho, f, df):
-    a = alpha
-    cnt = 0 
-    while  f(x + p * a) > f(x) + c * a * p.T.dot(df(x)):
-        a = rho * a
-        cnt += 1
-    return a
+# def backtrack(x, p, alpha, c, rho, f, df):
+#     a = alpha
+#     cnt = 0 
+#     while  f(x + p * a) > f(x) + c * a * p.T @df(x):
+#         a = rho * a
+#         cnt += 1
+#     return a
+
+
+def backtrack(func, grad, x, direction, init_alpha, c, r):
+    alpha = init_alpha
+    iterations = 0
+    while func(x + alpha * direction) > func(x) + c*alpha*np.dot(direction , grad(x)):
+        alpha *= r
+        iterations += 1
+    return alpha
 
 def CG(df, Hf, tolerance): 
     a_k = 1
@@ -149,7 +158,7 @@ def BFGS(x, f, df, eps, c1,c2):
         Hk = Hk + (fst_top/(bot**2))*np.outer(sk,sk) - snd_top/bot
     return np.array(dfs), np.array(iters)
 
-def newton_lin_eq(x,f, df, Hf, eps, A, c1, rho):
+def newton_lin_eq(x,f, df, Hf, eps, A, c1, rho, max_iter=1000):
     xk = x
     Bk = 0
     pk = 0
@@ -157,6 +166,7 @@ def newton_lin_eq(x,f, df, Hf, eps, A, c1, rho):
     xks = [x]
     dfs = [df(x)]
     iters = 0
+
 
     while True:
         eig_vals, eig_vecs = np.linalg.eig(Hf(xk))
@@ -176,40 +186,52 @@ def newton_lin_eq(x,f, df, Hf, eps, A, c1, rho):
         solved = np.linalg.solve(M,v)
         pk = solved[0:A.shape[1]]
         l_star = np.linalg.inv(A@A.T)@A @ df(xk)
-        print(pk)
-        print(l_star)
-        ak = backtrack(xk,pk,1.0,c1,rho,f,df)
+        # print(pk)
+        # print(l_star)
+        #ak = backtrack(xk,pk,1.0,c1,rho,f,df)
+        ak = backtrack(f,df,xk,pk,1.0,c1,rho)
         xk = xk + ak*pk
         xks.append(xk)
-        dfs.append(df(xk))
-        iters += iters
-        if np.linalg.norm(df(xk) + A.T@l_star) < eps:
+        dfs.append(np.linalg.norm(df(xk)))
+        iters = iters +1
+        if np.linalg.norm(df(xk) + A.T@l_star) < eps or iters >= max_iter:
             break
-    return xks, dfs, iters
+    return xks, dfs
 
-def steepest_lin_eq(x, df, eps, A, c1, rho):
+def steepest_lin_eq(x, f, df, eps, A, c1, rho, max_iter = 1000):
     Bk = 1.0
-    M = np.identity(x.shape[0]) - A.T*np.pinv(A*A.T)*A
-    pk = 0
-    ak = 0
+    M = np.eye(A.shape[1]) - A.T@np.linalg.inv(A@A.T)@A
+   # pk = 0
+   # ak = 0
     xk = x
     xks = [x]
     dfs = [df(x)]
-    while np.linalg.norm(df(x)) > eps:  # Change when we agreed upon stopping criteria
-        pk = -M*df(xk)
-        ak = backtrack(xk, pk, Bk, c1, rho)
+    iters = 0
+    max_iter = max_iter
+   # l_star = 0
+    while np.linalg.norm(M@df(x)) > eps and iters <= max_iter:  # Change when we agreed upon stopping criteria
+        pk = -M@df(xk)
+        #ak = backtrack(xk, pk, Bk, c1, rho,f,df)
+        ak = backtrack(f,df,xk,pk,Bk,c1,rho)
         xk = xk + ak*pk
         Bk = ak/rho
+        iters = iters +1
         xks.append(xk)
         dfs.append(df(xk))
+        iters = iters+1
+        #print(np.linalg.norm(df(xk)))
     return xks, dfs
 
 def get_point(A,b,x):
-    return x-np.linalg.pinv(A)@(A@x + b)
+    return x-np.linalg.pinv(A)@(A@x - b)
 
 def generate_A(m,n):
-    A = np.random.rand(m,n)
+    rd = np.random.RandomState(2023)
+    A = rd.uniform(-10,10,(m,n))
+    
+    #A = np.random.rand(m,n)
+    
     while np.linalg.matrix_rank(A) != m:
-        A = np.random.rand(m,n)
+        A = rd.uniform(-10,10,(m,n))
     return A
 
