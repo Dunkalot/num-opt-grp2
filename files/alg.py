@@ -169,7 +169,6 @@ def newton_lin_eq(x, f, df, Hf, eps, A, c1, rho):
         solved = np.linalg.solve(M,v)
         pk = solved[0:A.shape[1]]
         l_star = solved[A.shape[1]:]
-        print(l_star)
         ak = backtrack(xk,pk,1.0,c1,rho, f, df)
         xk = xk + ak*pk
         xks.append(xk)
@@ -179,17 +178,15 @@ def newton_lin_eq(x, f, df, Hf, eps, A, c1, rho):
             break
     return xks, test
 
-def steepest_lin_eq(x, df, eps, A, c1, rho):
+def steepest_lin_eq(x,f, df, eps, A, c1, rho):
     Bk = 1.0
-    M = np.identity(x.shape[0]) - A.T*np.pinv(A*A.T)*A
-    pk = 0
-    ak = 0
+    M =  np.eye(A.shape[1]) - A.T@(np.linalg.inv(A@A.T))@A
     xk = x
     xks = [x]
     dfs = [df(x)]
-    while np.linalg.norm(df(x)) > eps:  # Change when we agreed upon stopping criteria
-        pk = -M*df(xk)
-        ak = backtrack(xk, pk, Bk, c1, rho)
+    while  np.linalg.norm(M.dot(df(xk))) > eps:  # Change when we agreed upon stopping criteria
+        pk = -M.dot(df(xk))
+        ak = backtrack(xk, pk, Bk, c1, rho, f,df)
         xk = xk + ak*pk
         Bk = ak/rho
         xks.append(xk)
@@ -201,7 +198,6 @@ def get_point(A,b,x):
 
 def generate_A(m,n):
     A = np.random.rand(m,n)
-    while np.linalg.matrix_rank(A) != m:
+    while (np.linalg.matrix_rank(A) != m): 
         A = np.random.rand(m,n)
     return A
-
