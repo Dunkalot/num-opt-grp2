@@ -165,7 +165,9 @@ def newton_lin_eq(x,f, df, Hf, eps, A,b, c1, rho, max_iter=1000):
     ak = 0 
     xks = [x]
     dfs = [df(x)]
-    lambdas = []
+    criteria = []
+
+
     iters = 0
     Mk=np.eye(A.shape[1]) - A.T@np.linalg.inv(A@A.T)@A
 
@@ -186,39 +188,40 @@ def newton_lin_eq(x,f, df, Hf, eps, A,b, c1, rho, max_iter=1000):
         xk = xk + ak*pk
         xks.append(xk)
         dfs.append(np.linalg.norm(df(xk)))
+        criteria.append(np.abs(np.inner(df(xk),pk)))
         iters = iters +1
         rate = np.abs((f(xk) - f(xks[-2])))/f(xks[-2])
-        #print(np.dot(A,xk)+b)
-        #print(df(xk) + A.T@l)
-        if np.linalg.norm(np.dot(A,xk)+b)<eps or iters >= max_iter or rate < eps or np.linalg.norm(df(xk) + np.dot(A,l)) < eps:
+        print(criteria[-1])
+        if np.linalg.norm(np.inner(A,xk)+b)<eps or iters >= max_iter or np.linalg.norm(df(xk) + np.inner(A,l)) < eps:
             break
-    return xks, dfs
 
-def steepest_lin_eq(x, f, df, eps, A, c1, rho, max_iter = 1000):
+    
+    return xks, dfs, criteria
+
+def steepest_lin_eq(x, f, df, eps, A, c1, rho,x_opt, max_iter = 1000):
     Bk = 1.0
     M = np.eye(A.shape[1]) - A.T@np.linalg.inv(A@A.T)@A
-    pk = np.zeros((A.shape[1],))
    # ak = 0
     xk = x
+    pk = -np.dot(M,df(xk))
     xks = [x]
     dfs = [df(x)]
     iters = 0
     max_iter = max_iter
-    print("start")
-    while np.abs(np.dot(pk,df(xk))) < eps and iters <= max_iter and np.all(np.dot(A,pk)>eps):  
-        pk = -M@df(xk)
+    criteria = []
+    while np.abs(np.inner(df(xk),pk)) > eps and iters <= max_iter:  
+        pk = -np.dot(M,df(xk))
         ak = backtrack(f,df,xk,pk,Bk,c1,rho)
         xk = xk + ak*pk
         Bk = ak/rho
         iters = iters +1
+        #rate = np.abs((f(xk) - f(xks[-2])))/f(xks[-2])
         xks.append(xk)
         dfs.append(df(xk))
-        iters = iters+1
-        rate = np.abs((f(xk) - f(xks[-2])))/f(xks[-2])
-        print(iters)
-        if rate < eps:
-            break
-    return xks, dfs
+        criteria.append(np.abs(np.inner(df(xk),pk)))
+        # if rate < eps:
+        #     break
+    return xks, dfs, criteria
 
 def get_point(A,b,x):
     return x-np.linalg.pinv(A)@(A@x - b)
