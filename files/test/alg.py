@@ -188,9 +188,9 @@ def newton_lin_eq(x,f, df, Hf, eps, A,b, c1, rho, max_iter=1000):
         dfs.append(np.linalg.norm(df(xk)))
         iters = iters +1
         rate = np.abs((f(xk) - f(xks[-2])))/f(xks[-2])
-        print(np.dot(A,xk)+b)
-        print(df(xk) + A.T@l)
-        if np.linalg.norm(np.dot(A,xk)+b)<eps or iters >= max_iter or rate < eps or np.linalg.norm(df(xk) + A.T@l) < eps:
+        #print(np.dot(A,xk)+b)
+        #print(df(xk) + A.T@l)
+        if np.linalg.norm(np.dot(A,xk)+b)<eps or iters >= max_iter or rate < eps or np.linalg.norm(df(xk) + np.dot(A,l)) < eps:
             break
     return xks, dfs
 
@@ -204,10 +204,8 @@ def steepest_lin_eq(x, f, df, eps, A, c1, rho, max_iter = 1000):
     dfs = [df(x)]
     iters = 0
     max_iter = max_iter
-    
-   # l_star = 0
-   # while np.linalg.norm(M@df(x)) > eps and iters <= max_iter:
-    while np.linalg.norm(np.dot(pk,df(x))) < eps and iters <= max_iter and np.all(A@pk>eps):  # Change when we agreed upon stopping criteria
+    print("start")
+    while np.abs(np.dot(pk,df(xk))) < eps and iters <= max_iter and np.all(np.dot(A,pk)>eps):  
         pk = -M@df(xk)
         ak = backtrack(f,df,xk,pk,Bk,c1,rho)
         xk = xk + ak*pk
@@ -217,6 +215,7 @@ def steepest_lin_eq(x, f, df, eps, A, c1, rho, max_iter = 1000):
         dfs.append(df(xk))
         iters = iters+1
         rate = np.abs((f(xk) - f(xks[-2])))/f(xks[-2])
+        print(iters)
         if rate < eps:
             break
     return xks, dfs
