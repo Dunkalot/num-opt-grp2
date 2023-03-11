@@ -191,8 +191,9 @@ def newton_lin_eq(x,f, df, Hf, eps, A,b, c1, rho, max_iter=1000):
         criteria.append(np.abs(np.inner(df(xk),pk)))
         iters = iters +1
         rate = np.abs((f(xk) - f(xks[-2])))/f(xks[-2])
-        print(criteria[-1])
-        if np.linalg.norm(np.inner(A,xk)+b)<eps or iters >= max_iter or np.linalg.norm(df(xk) + np.inner(A,l)) < eps:
+        # if np.linalg.norm(np.inner(A,xk)+b)<eps or iters >= max_iter or np.linalg.norm(df(xk) + np.inner(A,l)) < eps:
+        #     break
+        if iters >= max_iter or np.abs(np.inner(df(xk),pk)) < eps:
             break
 
     
